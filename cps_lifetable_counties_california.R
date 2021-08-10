@@ -50,13 +50,14 @@ make_life_table<-function(dat){
   return(dat)
 }
 
-## population data are available here: https://seer.cancer.gov/popdata/download.html
 
+## population data are available here: https://seer.cancer.gov/popdata/download.html
 pop<-read_fwf("./data/us.1990_2019.singleages.adjusted.txt",
               fwf_widths(c(4, 2, 2, 3, 2, 1, 1, 1, 2, 8),
                          c("year", "state", "st_fips",
                            "cnty_fips", "reg", "race",
                            "hisp", "sex", "age", "pop"))) 
+
 
 ## filter population for 2014-2018
 pop<-pop%>%
@@ -72,6 +73,7 @@ pop<-pop%>%
              race==4 ~ "Asian/PI",
              hisp==1 ~ "Hispanic")) 
 
+
 ## create fipscode
 pop_fips<-pop %>%
   mutate(fipscode = as.numeric(
@@ -84,6 +86,7 @@ pop_fips<-pop %>%
                      fipscode==36085 ~ 36061,
                      T ~ fipscode)) ## mega new york to match afcars
 
+
 ## filter those 20 most populated counties
 top_pops<-pop_fips %>%
   ungroup() %>% 
@@ -94,8 +97,8 @@ top_pops<-pop_fips %>%
   mutate(rank = 1:n()) %>%
   filter(rank<=20) 
 
-
 write_csv(top_pops, "./data/top_pops.csv")
+
 
 ## of the top 20 counties, we focus only those in california
 pop_fips <- pop_fips %>% 
@@ -107,6 +110,7 @@ pop_fips <- pop_fips %>%
   group_by(year, fipscode, age, race_ethn) %>% 
   summarise(pop = sum(pop)) %>% 
   ungroup()
+
 
 ## load first CPS contact data
 
@@ -150,6 +154,7 @@ tpr<-read.dta13("./data/first_tpr_cws.dta") %>%
   summarise(first_tpr = sum(tpr)) %>% 
   ungroup()
 
+
 ## full join because california cws source data were not imputed for race/ethnicity.
 dat <-pop_fips %>%
   full_join(inv) %>%
@@ -174,6 +179,7 @@ tab_dat<-dat %>%
                values_to = "var",
                cols = first_inv:first_tpr)
 
+
 ## set up as 5 year total life table
 tab_dat<-tab_dat %>% 
   ungroup() %>% 
@@ -194,11 +200,13 @@ tab_dat<-tab_dat %>%
 tab_dat <- tab_dat %>%
   filter(pop != 0)
 
+
 ### run life tables by race, sex
 vars<-unique(tab_dat$varname)
 race<-unique(tab_dat$race_ethn)
 fips<-unique(tab_dat$fipscode)
 tables_out<-list()
+
 
 ### descriptive table out for appendix
 appx<-tab_dat %>% 
@@ -259,6 +267,7 @@ for(h in 1:length(vars)){
 
 tables<-bind_rows(tables_out)
 
+
 ## combine tables
 
 tables_within<-tables %>%
@@ -282,6 +291,7 @@ tables_comb<-tables_comb %>%
   filter(age == 17) %>%
   mutate(c_upr = ifelse(c_upr>1, 1, c_upr),
          c_lwr = ifelse(c_lwr<0, 0, c_lwr))
+
 
 ### format names
 tables_comb<-tables_comb %>%
